@@ -23,14 +23,14 @@ instance : ToString DMS where
 
 example : DMS := ⟨90, 12, 0.999⟩
 
-def checkShow {name : String} (res : String) (tst : DMS) :=
-  let got := toString tst
+def checkShow {name : String} (res : String) (tst : Unit -> DMS) :=
+  let got := toString $ tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"{name}: {msg}"
 
 def testShow : IO Unit := do
   let v := "90°12′0.9999″"
-  @checkShow v v ⟨90, 12, 0.9999⟩
+  @checkShow v v (fun _ => ⟨90, 12, 0.9999⟩)
 
 #eval testShow
 
