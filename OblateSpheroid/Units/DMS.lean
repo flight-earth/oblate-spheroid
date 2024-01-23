@@ -5,6 +5,7 @@ structure DMS where
   deg : Int
   min : Int
   sec: Float
+  deriving BEq
 
 def dropTrailingZeros (s : String) : String :=
   match Matcher.find? (Matcher.ofString ".") s with
@@ -23,18 +24,20 @@ instance : ToString DMS where
 
 example : DMS := ⟨90, 12, 0.999⟩
 
+def checkEq {name : String} (res : DMS) (tst : Unit -> DMS) :=
+  let got := tst ()
+  let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
+  IO.println s!"eq {name}: {msg}"
+
 def checkShow {name : String} (res : String) (tst : Unit -> DMS) :=
   let got := toString $ tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"{name}: {msg}"
 
+def testEq : IO Unit := do
+  let v := DMS.mk 90 12 0.9999
+  @checkEq (toString v) v (fun _ => ⟨90, 12, 0.9999⟩)
+
 def testShow : IO Unit := do
   let v := "90°12′0.9999″"
   @checkShow v v (fun _ => ⟨90, 12, 0.9999⟩)
-
-#eval testShow
-
-#eval String.Matcher.find? (String.Matcher.ofString ".") "0.999900"
-#eval String.posOf "0.999900" '.'
-#eval "0.999900" |> (fun s => (⟨s, ⟨1⟩, ⟨String.length s⟩⟩ : Substring))
-#eval dropTrailingZeros "0.999900"

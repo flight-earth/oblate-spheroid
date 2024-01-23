@@ -9,4 +9,5 @@ def main : IO Unit := do
   IO.println s!"New York: {newyork}"
   IO.println s!"DMS: {dms}"
 
+  testEq
   testShow
