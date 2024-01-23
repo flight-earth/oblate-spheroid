@@ -8,3 +8,5 @@ def main : IO Unit := do
   IO.println s!"London: {london}"
   IO.println s!"New York: {newyork}"
   IO.println s!"DMS: {dms}"
+
+  testShow
