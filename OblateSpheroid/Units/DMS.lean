@@ -15,15 +15,19 @@ structure DMS where
 
 def signum (x : Float) : Ordering := if x < 0.0 then lt else if x > 0.0 then gt else eq
 
+def div (n : Float) (d : Int) : Int := (n / (Float.ofInt d)).floor.toUInt64.toNat
+
+def divMod (n : Float) (d : Int) : (Int × Float) :=
+  let q := div n d
+  (q, n - Float.ofInt (q * d))
+
 def fromDeg (α : Deg) : DMS :=
   let dAbs := α.deg.abs
   let dd : Int := dAbs.floor.toUInt64.toNat
   let dFrac := (dAbs - Float.ofInt dd)
-  let mFrac := dFrac * 60.0
-  let mins : Int := mFrac.floor.toUInt64.toNat
-  let secs := (mFrac - Float.ofInt mins) * 60.0
+  let (mm, mFrac) := divMod (dFrac * 60.0) 1
 
-  ⟨if signum α.deg == lt then Int.neg dd else dd, mins, secs⟩
+  ⟨if signum α.deg == lt then Int.neg dd else dd, mm, mFrac * 60.0⟩
 
 def dropTrailingZeros (s : String) : String :=
   match Matcher.find? (Matcher.ofString ".") s with
