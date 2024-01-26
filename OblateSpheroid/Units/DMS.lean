@@ -46,28 +46,28 @@ instance : ToString DMS where
 
 example : DMS := ⟨90, 12, 0.999⟩
 
-def checkShow (name : String) (res : String) (tst : Unit -> DMS) :=
+def checkShow (res : String) (tst : Unit -> DMS)  (name := res):=
   let got := toString $ tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"{name}: {msg}"
 
-def checkEq (name : String) (res : DMS) (tst : Unit -> DMS) :=
+def checkEq (res : DMS) (tst : Unit -> DMS) (name := toString res):=
   let got := tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"eq {name}: {msg}"
 
-def checkFromDeg (name : String) (res : DMS) (tst : Unit -> DMS) :=
+def checkFromDeg (res : DMS) (tst : Unit -> DMS) (name := toString res):=
   let got := tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"from-deg {name}: {msg}"
 
 def testShow : IO Unit := do
   let v := "90°12′0.9999″"
-  checkShow v v (fun _ => ⟨90, 12, 0.9999⟩)
+  checkShow v (fun _ => ⟨90, 12, 0.9999⟩)
 
 def testEq : IO Unit := do
   let v := DMS.mk 90 12 0.9999
-  checkEq (toString v) v (fun _ => ⟨90, 12, 0.9999⟩)
+  checkEq v (fun _ => ⟨90, 12, 0.9999⟩)
 
 def testFromDeg : IO Unit := do
   let dmsZero := DMS.mk 0 0 0.0
@@ -75,11 +75,11 @@ def testFromDeg : IO Unit := do
   let dmsMinusOne := DMS.mk (-1) 0 0.0
   let dms169 := DMS.mk 169 3 59.99999839625161
   let dmsMinus169 := DMS.mk (-169) 3 59.99999839625161
-  checkFromDeg (toString dmsZero) (fromDeg $ Deg.mk 0.0) (fun _ => dmsZero)
-  checkFromDeg (toString dmsOne) (fromDeg $ Deg.mk 1.0) (fun _ => dmsOne)
-  checkFromDeg (toString dmsMinusOne) (fromDeg $ Deg.mk (-1.0)) (fun _ => dmsMinusOne)
-  checkFromDeg (toString dms169) (fromDeg $ Deg.mk 169.06666666622118) (fun _ => dms169)
-  checkFromDeg (toString dmsMinus169) (fromDeg $ Deg.mk (-169.06666666622118)) (fun _ => dmsMinus169)
+  checkFromDeg (fromDeg $ Deg.mk 0.0) (fun _ => dmsZero)
+  checkFromDeg (fromDeg $ Deg.mk 1.0) (fun _ => dmsOne)
+  checkFromDeg (fromDeg $ Deg.mk (-1.0)) (fun _ => dmsMinusOne)
+  checkFromDeg (fromDeg $ Deg.mk 169.06666666622118) (fun _ => dms169)
+  checkFromDeg (fromDeg $ Deg.mk (-169.06666666622118)) (fun _ => dmsMinus169)
 
 #eval testFromDeg
 #eval fromDeg $ Deg.mk (-169.06666666622118)
