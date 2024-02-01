@@ -1,3 +1,4 @@
+import Std
 import Std.Data.String.Basic
 import Init.Data
 open String
@@ -82,4 +83,7 @@ def testFromDeg : IO Unit := do
   checkFromDeg (fromDeg $ Deg.mk (-169.06666666622118)) (fun _ => dmsMinus169)
 
 #eval testFromDeg
+
+/-- info: -169°3′59.999998″ -/
+#guard_msgs in
 #eval fromDeg $ Deg.mk (-169.06666666622118)
