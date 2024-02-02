@@ -16,6 +16,32 @@ structure DMS where
 
 def signum (x : Float) : Ordering := if x < 0.0 then lt else if x > 0.0 then gt else eq
 
+instance : ToString Ordering where
+  toString
+    | lt => "lt"
+    | eq => "eq"
+    | gt => "gt"
+
+def signDMS : DMS -> Ordering
+  | ⟨d, m, s⟩ =>
+    if d < 0 || m < 0 || s < 0 then lt else
+      if d == 0 && m == 0 && s == 0 then eq else gt
+
+/-- info: lt -/
+#guard_msgs in #eval signDMS $ DMS.mk 0 0 (-1.0)
+/-- info: lt -/
+#guard_msgs in #eval signDMS $ DMS.mk 0 (-1) 0
+/-- info: lt -/
+#guard_msgs in #eval signDMS $ DMS.mk (-1) 0 0
+/-- info: eq -/
+#guard_msgs in #eval signDMS $ DMS.mk 0 0 0
+/-- info: gt -/
+#guard_msgs in #eval signDMS $ DMS.mk 0 0 1
+/-- info: gt -/
+#guard_msgs in #eval signDMS $ DMS.mk 0 1 0
+/-- info: gt -/
+#guard_msgs in #eval signDMS $ DMS.mk 1 0 0
+
 def div (n : Float) (d : Int) : Int := (n / (Float.ofInt d)).floor.toUInt64.toNat
 
 def divMod (n : Float) (d : Int) : (Int × Float) :=
@@ -30,6 +56,14 @@ def fromDeg (α : Deg) : DMS :=
 
   ⟨if signum α.deg == lt then Int.neg dd else dd, mm, mFrac * 60.0⟩
 
+def toDeg (dms : DMS) : Deg :=
+  let d := Float.abs $ Float.ofInt dms.deg
+  let m := Float.abs $ Float.ofInt dms.min
+  let s := dms.sec
+  let m' := m + s / 60.0
+  let d' := d + m' / 60.0
+  if signDMS dms == lt then Deg.mk (-d') else Deg.mk d'
+
 def dropTrailingZeros (s : String) : String :=
   match Matcher.find? (Matcher.ofString ".") s with
   | none => s
@@ -37,13 +71,19 @@ def dropTrailingZeros (s : String) : String :=
     {dps with stopPos := String.endPos s}.dropRightWhile (· == '0')
     |> fun s' => s.take s'.startPos.byteIdx ++ toString s'
 
-def display (x : DMS) : String :=
+def displayDMS (x : DMS) : String :=
   toString x.deg ++ "°" ++
   toString x.min ++ "′" ++
   (dropTrailingZeros $ toString x.sec) ++ "″"
 
+instance : ToString Deg where
+  toString := fun x => toString x.deg ++ "°"
+
 instance : ToString DMS where
-  toString := display
+  toString := displayDMS
+
+/-- info: -169°3′59.999998″ -/
+#guard_msgs in #eval fromDeg $ Deg.mk (-169.06666666622118)
 
 example : DMS := ⟨90, 12, 0.999⟩
 
@@ -58,6 +98,11 @@ def checkEq (res : DMS) (tst : Unit -> DMS) (name := toString res):=
   IO.println s!"eq {name}: {msg}"
 
 def checkFromDeg (res : DMS) (tst : Unit -> DMS) (name := toString res):=
+  let got := tst ()
+  let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
+  IO.println s!"from-deg {name}: {msg}"
+
+def checkToDeg (res : Deg) (tst : Unit -> Deg) (name := toString res):=
   let got := tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"from-deg {name}: {msg}"
@@ -82,8 +127,6 @@ def testFromDeg : IO Unit := do
   checkFromDeg (fromDeg $ Deg.mk 169.06666666622118) (fun _ => dms169)
   checkFromDeg (fromDeg $ Deg.mk (-169.06666666622118)) (fun _ => dmsMinus169)
 
-#eval testFromDeg
-
-/-- info: -169°3′59.999998″ -/
-#guard_msgs in
-#eval fromDeg $ Deg.mk (-169.06666666622118)
+def testToDeg : IO Unit := do
+  checkToDeg (toDeg ⟨0, 0, 0.0⟩ ) (fun _ => ⟨0.0⟩)
+  checkToDeg (toDeg ⟨289, 30, 0.0⟩) (fun _ => ⟨289.5⟩)

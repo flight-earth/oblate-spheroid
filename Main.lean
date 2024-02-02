@@ -12,3 +12,4 @@ def main : IO Unit := do
   testShow
   testEq
   testFromDeg
+  testToDeg
