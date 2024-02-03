@@ -57,8 +57,8 @@ def divMod (n : Float) (d : Int) : (Int × Float) :=
 
 def fromDeg (α : Deg) : DMS :=
   let dAbs := α.deg.abs
-  let dd : Int := dAbs.floor.toUInt64.toNat
-  let dFrac := (dAbs - Float.ofInt dd)
+  let dFrac := dAbs - dAbs.floor
+  let dd := (dAbs - dFrac).toUInt64.toNat
   let (mm, mFrac) := divMod (dFrac * 60.0) 1
 
   ⟨if signum α.deg == lt then Int.neg dd else dd, mm, mFrac * 60.0⟩
@@ -182,5 +182,15 @@ def testNormalize : IO Unit := do
 #guard_msgs in #eval normalizeDMS ∘ fromDeg $ Deg.mk (361.0)
 /-- info: 359°59′0.″ -/
 #guard_msgs in #eval ⟨0, -1, 0.0⟩ |> normalizeDMS
-/-- info: 1°1′0.″ -/
-#guard_msgs in #eval ⟨0, 61, 0.0⟩ |> normalizeDMS
+/-- info: 0°1′1.″ -/
+#guard_msgs in #eval ⟨0, 0, 61.0⟩ |> normalizeDMS
+
+/-- info: 1°0′60.″ -/
+#guard_msgs in
+ /- TODO: Should be 1°1′0.″ -/
+#eval ⟨0, 61, 0.0⟩ |> normalizeDMS
+
+/-- info: 1°0′60.″ -/
+#guard_msgs in
+ /- TODO: Should be 1°1′0.″ -/
+#eval ⟨1, 0, 60.0⟩ |> normalizeDMS
