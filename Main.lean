@@ -13,3 +13,4 @@ def main : IO Unit := do
   testEq
   testFromDeg
   testToDeg
+  testNormalize

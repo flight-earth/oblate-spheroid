@@ -42,7 +42,14 @@ def signDMS : DMS -> Ordering
 /-- info: gt -/
 #guard_msgs in #eval signDMS $ DMS.mk 1 0 0
 
-def div (n : Float) (d : Int) : Int := (n / (Float.ofInt d)).floor.toUInt64.toNat
+def div (n : Float) (d : Int) : Int :=
+  let n' := Float.abs n
+  let d' := Float.ofInt d
+  let d'' := Float.abs d'
+  (n' / d'').floor.toUInt64.toNat
+  |> fun x => if signum n == signum d'' then x else -x
+
+def mod (n : Float) (d : Int) : Float := n - Float.ofInt (div n d * d)
 
 def divMod (n : Float) (d : Int) : (Int × Float) :=
   let q := div n d
@@ -71,6 +78,13 @@ def dropTrailingZeros (s : String) : String :=
     {dps with stopPos := String.endPos s}.dropRightWhile (· == '0')
     |> fun s' => s.take s'.startPos.byteIdx ++ toString s'
 
+def normalizeDeg (d : Deg) : Deg :=
+  let x := mod d.deg 360
+  if x == 0.0 then Deg.mk 0.0 else
+    if x < 0.0 then Deg.mk (360.0 + x) else Deg.mk x
+
+def normalizeDMS (dms : DMS) : DMS := fromDeg ∘ normalizeDeg $ toDeg dms
+
 def displayDMS (x : DMS) : String :=
   toString x.deg ++ "°" ++
   toString x.min ++ "′" ++
@@ -81,6 +95,11 @@ instance : ToString Deg where
 
 instance : ToString DMS where
   toString := displayDMS
+
+#eval normalizeDMS (DMS.mk 0 0 0.0)
+#eval normalizeDMS (DMS.mk 359 0 0.0)
+#eval normalizeDMS (DMS.mk 361 0 0.0)
+#eval normalizeDMS (DMS.mk (-1) 0 0.0)
 
 /-- info: -169°3′59.999998″ -/
 #guard_msgs in #eval fromDeg $ Deg.mk (-169.06666666622118)
@@ -96,6 +115,9 @@ def checkEq (res : DMS) (tst : Unit -> DMS) (name := toString res):=
   let got := tst ()
   let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"eq {name}: {msg}"
+
+def checkNormalize (res : DMS) (tst : Unit -> DMS) (name := "normalize" ++ toString res) :=
+  checkEq res tst name
 
 def checkFromDeg (res : DMS) (tst : Unit -> DMS) (name := toString res):=
   let got := tst ()
@@ -130,3 +152,35 @@ def testFromDeg : IO Unit := do
 def testToDeg : IO Unit := do
   checkToDeg (toDeg ⟨0, 0, 0.0⟩ ) (fun _ => ⟨0.0⟩)
   checkToDeg (toDeg ⟨289, 30, 0.0⟩) (fun _ => ⟨289.5⟩)
+
+def testNormalize : IO Unit := do
+  let f : Float -> DMS := fun x => Deg.mk x |> fromDeg |> normalizeDMS
+  checkNormalize (DMS.mk   0  0  0.0) (fun _ => f 0.0)
+  checkNormalize (DMS.mk 180  0  0.0) (fun _ => f 180.0)
+  checkNormalize (DMS.mk   1  0  0.0) (fun _ => f 1.0)
+  checkNormalize (DMS.mk 180  0  0.0) (fun _ => f (-180.0))
+  checkNormalize (DMS.mk 359  0  0.0) (fun _ => f (-1.0))
+
+  checkNormalize (DMS.mk 0  0  0.0) (fun _ => (DMS.mk 0  0  0.0) |> normalizeDMS)
+  checkNormalize (DMS.mk 180 0 0.0) (fun _ => (DMS.mk 180  0  0.0) |> normalizeDMS)
+  checkNormalize (DMS.mk 180 0 0.0) (fun _ => (DMS.mk (-180) 0  0.0) |> normalizeDMS)
+  checkNormalize (DMS.mk 359 0 0.0) (fun _ => (DMS.mk (-1) 0 0.0) |> normalizeDMS)
+
+  checkNormalize (DMS.mk 190 56 1.6037483874242753e-6)
+    (fun _ => (DMS.mk 190 56 1.6037483874242753e-6) |> normalizeDMS)
+
+  checkNormalize (DMS.mk 169 3 59.99999839625161)
+    (fun _ => (DMS.mk (-190) 56 1.603721102583222e-6) |> normalizeDMS)
+
+/-- info: 359°0′0.″ -/
+#guard_msgs in #eval ⟨-1, 0, 0.0⟩ |> normalizeDMS
+/-- info: 359°0′0.″ -/
+#guard_msgs in #eval normalizeDMS ∘ fromDeg $ Deg.mk (-1.0)
+/-- info: 1°0′0.″ -/
+#guard_msgs in #eval ⟨361, 0, 0.0⟩ |> normalizeDMS
+/-- info: 1°0′0.″ -/
+#guard_msgs in #eval normalizeDMS ∘ fromDeg $ Deg.mk (361.0)
+/-- info: 359°59′0.″ -/
+#guard_msgs in #eval ⟨0, -1, 0.0⟩ |> normalizeDMS
+/-- info: 1°1′0.″ -/
+#guard_msgs in #eval ⟨0, 61, 0.0⟩ |> normalizeDMS
