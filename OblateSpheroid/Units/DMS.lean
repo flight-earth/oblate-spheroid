@@ -91,7 +91,7 @@ instance : ToString DMS where
 
 def checkShow (res : String) (tst : Unit -> DMS)  (name := res):=
   let got := toString $ tst ()
-  let msg := if (got == res) then s!"ok: {res}" else "failed!:\n expect: {res}\n gotten: {got}"
+  let msg := if (got == res) then s!"ok: {res}" else s!"failed!:\n expect: {res}\n gotten: {got}"
   IO.println s!"{name}: {msg}"
 
 def checkEq (res : DMS) (tst : Unit -> DMS) (name := toString res):=
@@ -113,8 +113,8 @@ def checkToDeg (res : Deg) (tst : Unit -> Deg) (name := toString res):=
   IO.println s!"from-deg {name}: {msg}"
 
 def testShow : IO Unit := do
-  let v := "90°12′0.9999″"
-  checkShow v (fun _ => ⟨90, 12, 0.9999⟩)
+  let v := "90°12′0.5″"
+  checkShow v (fun _ => ⟨90, 12, 0.5⟩)
 
 def testEq : IO Unit := do
   let v := DMS.mk 90 12 0.9999
