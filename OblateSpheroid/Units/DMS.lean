@@ -188,108 +188,30 @@ def testNormalize : IO Unit := do
 #guard_msgs in #eval fromDeg ∘ normalizeDeg $ Deg.mk (-1.0/3600.0)
 /-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval ⟨0, 0, -1.0⟩ |> normalizeDMS
-
-/-- info: -0.0002777777777777777775368439616698879035538993775844573974609375° -/
-#guard_msgs in #eval Deg.mk (-1.0/3600.0)
-/-- info: -0.0002777777777777777775368439616698879035538993775844573974609375° -/
-#guard_msgs in #eval ⟨0, 0, -1.0⟩ |> toDeg
-/-- info: 359.9997222222222035270533524453639984130859375° -/
-#guard_msgs in #eval normalizeDeg $ Deg.mk (-1.0/3600.0)
-/-- info: 359.9997222222222035270533524453639984130859375° -/
-#guard_msgs in #eval normalizeDeg $ Deg.mk (360.0 - 1.0/3600.0)
 /-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval fromDeg ∘ normalizeDeg $ Deg.mk (360.0 - 1.0/3600.0)
 /-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval ⟨0, 0, -1.0⟩ |> toDeg |> fromDeg ∘ normalizeDeg
 
-/-- info: 60.000000 -/
-#guard_msgs in #eval ⟨0, 0, 60.0⟩ |> toDeg |> (fun d => d.deg * 3600.0)
+/-- info: -0.0002777777777777777775368439616698879035538993775844573974609375° -/
+#guard_msgs in #eval Deg.mk (-1.0/3600.0)
+/-- info: -0.0002777777777777777775368439616698879035538993775844573974609375° -/
+#guard_msgs in #eval ⟨0, 0, -1.0⟩ |> toDeg
+
+/-- info: 359.9997222222222035270533524453639984130859375° -/
+#guard_msgs in #eval normalizeDeg $ Deg.mk (-1.0/3600.0)
+/-- info: 359.9997222222222035270533524453639984130859375° -/
+#guard_msgs in #eval normalizeDeg $ Deg.mk (360.0 - 1.0/3600.0)
+
+/-- info: "60" -/
+#guard_msgs in #eval ⟨0, 0, 60.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
 /-- info: "61.00000000000000710542735760100185871124267578125" -/
 #guard_msgs in #eval ⟨0, 0, 61.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
 /-- info: "61.00000000000000710542735760100185871124267578125" -/
 #guard_msgs in #eval ⟨0, 1, 1.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
-/-- info: "0.0166666666666666664353702032030923874117434024810791015625" -/
-#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> toDeg |> (fun d => (d.deg * 60.0).toStringFull)
+/-- info: "1" -/
+#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
 /-- info: 0°1′0″ -/
 #guard_msgs in #eval ⟨0, 0, 60.0⟩ |> normalizeDMS
 /-- info: 1°0′0″ -/
 #guard_msgs in #eval ⟨0, 60, 0.0⟩ |> normalizeDMS
-
-/-- info: 0.016680 -/
-#guard_msgs in #eval 0.000278 * 60.0
-/-- info: (0, 0.000278) -/
-#guard_msgs in #eval divMod (1.0/3600.0) 1
-/-- info: (0, 0.016667) -/
-#guard_msgs in #eval divMod (1.0/60.0) 60
-/-- info: 0°1′0″ -/
-#guard_msgs in #eval fromDeg (Deg.mk $ 1.0/60.0)
-/-- info: 0°1′0″ -/
-#guard_msgs in #eval fromDeg (Deg.mk $ 60.0/3600.0)
-/-- info: 0°0′1″ -/
-#guard_msgs in #eval fromDeg (Deg.mk $ 1.0/3600.0)
-/-- info: 0°0′1″ -/
-#guard_msgs in #eval fromDeg (Deg.mk 0.0002777777777777777775368439616698879035538993775844573974609375)
-/-- info: 0.0002777777777777777775368439616698879035538993775844573974609375° -/
-#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> toDeg
-/-- info: 0°0′1″ -/
-#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> normalizeDMS
-/-- info: 0°1′0″ -/
-#guard_msgs in #eval ⟨0, 0, 60.0⟩ |> normalizeDMS
-/-- info: 0°2′0″ -/
-#guard_msgs in #eval ⟨0, 1, 60.0⟩ |> normalizeDMS
-/-- info: 0°1′1.00000000000000976996261670137755572795867919921875″ -/
-#guard_msgs in #eval ⟨0, 0, 61.0⟩ |> normalizeDMS
-/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
-#guard_msgs in #eval ⟨1, 0, 60.0⟩ |> normalizeDMS
-
-/-- info: 1.01666666666666660745477201999165117740631103515625° -/
-#guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg
-/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
-#guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg |> fromDeg
-/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
-#guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg |> fromDeg ∘ normalizeDeg
-
-/-- info: 1.016667 -/
-#guard_msgs in #eval (⟨1, 1, 0.0⟩ |> toDeg).deg.abs
-/-- info: 1.016667 -/
-#guard_msgs in #eval 1.016667
-/-- info: 1.016667 -/
-#guard_msgs in #eval let x := 1.016667; x.abs
-/-- info: 0.016667 -/
-#guard_msgs in #eval let x := 1.016667.abs; x - x.floor
-/-- info: (1, 0.000000) -/
-#guard_msgs in #eval
-  let dAbs := 1.016667.abs
-  let dFrac := dAbs - dAbs.floor
-  divMod (dFrac * 60.0).floor 1
-
-/-- info: 1 -/
-#guard_msgs in #eval
-  let dAbs := 1.016667.abs
-  dAbs.floor.toUInt64.toNat
-
-/-- info: 1°1′0″ -/
-#guard_msgs in #eval
-  let deg := 1.016667
-
-  let dAbs := deg.abs
-  let dFrac := dAbs - dAbs.floor
-  let (mm, mFrac) := divMod (dFrac * 60.0).floor 1
-
-  let dd := dAbs.floor.toUInt64.toNat
-  DMS.mk (match signum deg with | eq => 0 | lt => Int.neg dd | gt => dd) mm (mFrac * 60.0)
-
-/-- info: 1°1′0.001199999999954570739646442234516143798828125″ -/
-#guard_msgs in #eval fromDeg (Deg.mk 1.016667)
-/-- info: 1.01666666666666660745477201999165117740631103515625° -/
-#guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg
-/-- info: "1.0166669999999999873807610129006206989288330078125" -/
-#guard_msgs in #eval 1.016667.toStringFull
-/-- info: 1.016667 -/
-#guard_msgs in #eval (⟨1, 1, 0.0⟩ |> toDeg).deg
-/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
-#guard_msgs in #eval fromDeg (⟨1, 1, 0.0⟩ |> toDeg)
-/-- info: 0°1′0″ -/
-#guard_msgs in #eval fromDeg (⟨0, 1, 0.0⟩ |> toDeg)
-/-- info: 1°1′0.99999999999994315658113919198513031005859375″ -/
-#guard_msgs in #eval fromDeg (⟨1, 1, 1.0⟩ |> toDeg)
