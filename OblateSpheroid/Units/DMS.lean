@@ -23,18 +23,24 @@ instance : ToString Ordering where
     | eq => "eq"
     | gt => "gt"
 
-def signDMS : DMS -> Ordering
+-- | When positive or zero, all fields of a DMS are positive. When negative, the
+-- first nonzero field in order of decreasing size should be negative but no
+-- other fields but if smaller fields are negative, ignore their sign.
+--
+-- As a structure, a DMS can be constructed with more than one negative field so
+-- signDMS serves separate the negativity of the fields from the fields.
+def signDMS : DMS -> Ordering × DMS
   | ⟨d, m, s⟩ =>
-    if d < 0 || m < 0 || s < 0 then lt else
-      if d == 0 && m == 0 && s == 0 then eq else gt
+    let sign := if d < 0 || m < 0 || s < 0 then lt else if d == 0 && m == 0 && s == 0 then eq else gt
+    (sign, ⟨if d < 0 then -d else d, if m < 0 then -m else m, s.abs⟩)
 
-#guard signDMS (DMS.mk 0 0 (-1.0)) == lt
-#guard signDMS (DMS.mk 0 (-1) 0) == lt
-#guard signDMS (DMS.mk (-1) 0 0) == lt
-#guard signDMS (DMS.mk 0 0 0) == eq
-#guard signDMS (DMS.mk 0 0 1) == gt
-#guard signDMS (DMS.mk 0 1 0) == gt
-#guard signDMS (DMS.mk 1 0 0) == gt
+#guard signDMS (DMS.mk 0 0 (-1.0)) == (lt, ⟨0, 0, 1.0⟩)
+#guard signDMS (DMS.mk 0 (-1) 0) == (lt, ⟨0, 1, 0.0⟩)
+#guard signDMS (DMS.mk (-1) 0 0) == (lt, ⟨1, 0, 0.0⟩)
+#guard signDMS (DMS.mk 0 0 0) == (eq, ⟨0, 0, 0.0⟩)
+#guard signDMS (DMS.mk 0 0 1) == (gt, ⟨0, 0, 1.0⟩)
+#guard signDMS (DMS.mk 0 1 0) == (gt, ⟨0, 1, 0.0⟩)
+#guard signDMS (DMS.mk 1 0 0) == (gt, ⟨1, 0, 0.0⟩)
 
 def div (n : Float) (d : Int) : Int :=
   let n' := Float.abs n
@@ -43,7 +49,8 @@ def div (n : Float) (d : Int) : Int :=
   (n' / d'').floor.toUInt64.toNat
   |> fun x => if signum n == signum d'' then x else -x
 
-def mod (n : Float) (d : Int) : Float := n - Float.ofInt (div n d * d)
+def mod (n : Float) (d : Int) : Float :=
+  n - Float.ofInt (div n d * d)
 
 def divMod (n : Float) (d : Int) : (Int × Float) :=
   let q := div n d
@@ -52,37 +59,29 @@ def divMod (n : Float) (d : Int) : (Int × Float) :=
 def fromDeg (α : Deg) : DMS :=
   let dAbs := α.deg.abs
   let dFrac := dAbs - dAbs.floor
-  let (mm, mFrac) := divMod (dFrac * 60.0).floor 1
+  let (mm, mFrac) := divMod (dFrac * 60.0) 1
 
   let dd := dAbs.floor.toUInt64.toNat
   DMS.mk (match signum α.deg with | eq => 0 | lt => Int.neg dd | gt => dd) mm (mFrac * 60.0)
 
 def toDeg (dms : DMS) : Deg :=
-  let d := Float.abs $ Float.ofInt dms.deg
-  let m := Float.abs $ Float.ofInt dms.min
-  let s := Float.abs dms.sec
-  let m' := m + s / 60.0
-  let d' := d + m' / 60.0
-  if signDMS dms == lt then Deg.mk (-d') else Deg.mk d'
-
-def dropTrailingZeros (s : String) : String :=
-  match Matcher.find? (Matcher.ofString ".") s with
-  | none => s
-  | some dps =>
-    {dps with stopPos := String.endPos s}.dropRightWhile (· == '0')
-    |> fun s' => s.take s'.startPos.byteIdx ++ toString s'
+  let (pn, dms') := signDMS dms
+  let d := Float.ofInt dms'.deg
+  let m := Float.ofInt dms'.min
+  let s := dms'.sec
+  let dd := (d * 3600.0 + m * 60.0 + s) / 3600.0
+  Deg.mk $ match pn with | eq => 0.0 | gt => dd | lt => -dd
 
 def normalizeDeg (d : Deg) : Deg :=
-  let x := mod d.deg 360
-  if x == 0.0 then Deg.mk 0.0 else
-    if x < 0.0 then Deg.mk (360.0 + x) else Deg.mk x
+  let x := mod d.deg.abs 360
+  if d.deg < 0.0 then Deg.mk (360.0 - x) else Deg.mk x
 
 def normalizeDMS (dms : DMS) : DMS := fromDeg ∘ normalizeDeg $ toDeg dms
 
 def displayDMS (x : DMS) : String :=
   toString x.deg ++ "°" ++
   toString x.min ++ "′" ++
-  (dropTrailingZeros x.sec.toStringFull) ++ "″"
+  x.sec.toStringFull ++ "″"
 
 instance : ToString Deg where
   toString := fun x => x.deg.toStringFull ++ "°"
@@ -156,14 +155,14 @@ def testNormalize : IO Unit := do
   checkNormalize (DMS.mk 169 3 59.99999839625161)
     (fun _ => (DMS.mk (-190) 56 1.603721102583222e-6) |> normalizeDMS)
 
-/-- info: -169°3′0″ -/
+/-- info: -169°3′59.99999839625161257572472095489501953125″ -/
 #guard_msgs in #eval fromDeg $ Deg.mk (-169.06666666622118)
 
 /-- info: 1°0′0″ -/
 #guard_msgs in #eval ⟨1, 0, 0.0⟩ |> normalizeDMS
 /-- info: 0°1′0″ -/
 #guard_msgs in #eval ⟨0, 1, 0.0⟩ |> normalizeDMS
-/-- info: 0°0′0″ -/
+/-- info: 0°0′1″ -/
 #guard_msgs in #eval ⟨0, 0, 1.0⟩ |> normalizeDMS
 
 /-- info: 1° -/
@@ -180,14 +179,14 @@ def testNormalize : IO Unit := do
 /-- info: 359°0′0″ -/
 #guard_msgs in #eval normalizeDMS ∘ fromDeg $ Deg.mk (-1.0)
 
-/-- info: 359°59′0″ -/
+/-- info: 359°59′0.00000000005456968210637569427490234375″ -/
 #guard_msgs in #eval fromDeg ∘ normalizeDeg $ Deg.mk (-1.0/60.0)
-/-- info: 359°59′0″ -/
+/-- info: 359°59′0.00000000005456968210637569427490234375″ -/
 #guard_msgs in #eval ⟨0, -1, 0.0⟩ |> normalizeDMS
 
-/-- info: 359°59′0″ -/
+/-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval fromDeg ∘ normalizeDeg $ Deg.mk (-1.0/3600.0)
-/-- info: 359°59′0″ -/
+/-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval ⟨0, 0, -1.0⟩ |> normalizeDMS
 
 /-- info: -0.0002777777777777777775368439616698879035538993775844573974609375° -/
@@ -198,28 +197,56 @@ def testNormalize : IO Unit := do
 #guard_msgs in #eval normalizeDeg $ Deg.mk (-1.0/3600.0)
 /-- info: 359.9997222222222035270533524453639984130859375° -/
 #guard_msgs in #eval normalizeDeg $ Deg.mk (360.0 - 1.0/3600.0)
-/-- info: 359°59′0″ -/
+/-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval fromDeg ∘ normalizeDeg $ Deg.mk (360.0 - 1.0/3600.0)
-/-- info: 359°59′0″ -/
+/-- info: 359°59′58.999999999932697392068803310394287109375″ -/
 #guard_msgs in #eval ⟨0, 0, -1.0⟩ |> toDeg |> fromDeg ∘ normalizeDeg
 
+/-- info: 60.000000 -/
+#guard_msgs in #eval ⟨0, 0, 60.0⟩ |> toDeg |> (fun d => d.deg * 3600.0)
+/-- info: "61.00000000000000710542735760100185871124267578125" -/
+#guard_msgs in #eval ⟨0, 0, 61.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
+/-- info: "61.00000000000000710542735760100185871124267578125" -/
+#guard_msgs in #eval ⟨0, 1, 1.0⟩ |> toDeg |> (fun d => (d.deg * 3600.0).toStringFull)
+/-- info: "0.0166666666666666664353702032030923874117434024810791015625" -/
+#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> toDeg |> (fun d => (d.deg * 60.0).toStringFull)
 /-- info: 0°1′0″ -/
-#guard_msgs in #eval ⟨0, 0, 61.0⟩ |> normalizeDMS
+#guard_msgs in #eval ⟨0, 0, 60.0⟩ |> normalizeDMS
 /-- info: 1°0′0″ -/
-#guard_msgs in #eval ⟨0, 61, 0.0⟩ |> normalizeDMS
+#guard_msgs in #eval ⟨0, 60, 0.0⟩ |> normalizeDMS
 
+/-- info: 0.016680 -/
+#guard_msgs in #eval 0.000278 * 60.0
+/-- info: (0, 0.000278) -/
+#guard_msgs in #eval divMod (1.0/3600.0) 1
+/-- info: (0, 0.016667) -/
+#guard_msgs in #eval divMod (1.0/60.0) 60
+/-- info: 0°1′0″ -/
+#guard_msgs in #eval fromDeg (Deg.mk $ 1.0/60.0)
+/-- info: 0°1′0″ -/
+#guard_msgs in #eval fromDeg (Deg.mk $ 60.0/3600.0)
+/-- info: 0°0′1″ -/
+#guard_msgs in #eval fromDeg (Deg.mk $ 1.0/3600.0)
+/-- info: 0°0′1″ -/
+#guard_msgs in #eval fromDeg (Deg.mk 0.0002777777777777777775368439616698879035538993775844573974609375)
+/-- info: 0.0002777777777777777775368439616698879035538993775844573974609375° -/
+#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> toDeg
+/-- info: 0°0′1″ -/
+#guard_msgs in #eval ⟨0, 0, 1.0⟩ |> normalizeDMS
 /-- info: 0°1′0″ -/
 #guard_msgs in #eval ⟨0, 0, 60.0⟩ |> normalizeDMS
 /-- info: 0°2′0″ -/
 #guard_msgs in #eval ⟨0, 1, 60.0⟩ |> normalizeDMS
-/-- info: 1°0′0″ -/
+/-- info: 0°1′1.00000000000000976996261670137755572795867919921875″ -/
+#guard_msgs in #eval ⟨0, 0, 61.0⟩ |> normalizeDMS
+/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
 #guard_msgs in #eval ⟨1, 0, 60.0⟩ |> normalizeDMS
 
 /-- info: 1.01666666666666660745477201999165117740631103515625° -/
 #guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg
-/-- info: 1°0′0″ -/
+/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
 #guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg |> fromDeg
-/-- info: 1°0′0″ -/
+/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
 #guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg |> fromDeg ∘ normalizeDeg
 
 /-- info: 1.016667 -/
@@ -252,7 +279,7 @@ def testNormalize : IO Unit := do
   let dd := dAbs.floor.toUInt64.toNat
   DMS.mk (match signum deg with | eq => 0 | lt => Int.neg dd | gt => dd) mm (mFrac * 60.0)
 
-/-- info: 1°1′0″ -/
+/-- info: 1°1′0.001199999999954570739646442234516143798828125″ -/
 #guard_msgs in #eval fromDeg (Deg.mk 1.016667)
 /-- info: 1.01666666666666660745477201999165117740631103515625° -/
 #guard_msgs in #eval ⟨1, 1, 0.0⟩ |> toDeg
@@ -260,9 +287,9 @@ def testNormalize : IO Unit := do
 #guard_msgs in #eval 1.016667.toStringFull
 /-- info: 1.016667 -/
 #guard_msgs in #eval (⟨1, 1, 0.0⟩ |> toDeg).deg
-/-- info: 1°0′0″ -/
+/-- info: 1°0′59.9999999999997868371792719699442386627197265625″ -/
 #guard_msgs in #eval fromDeg (⟨1, 1, 0.0⟩ |> toDeg)
 /-- info: 0°1′0″ -/
 #guard_msgs in #eval fromDeg (⟨0, 1, 0.0⟩ |> toDeg)
-/-- info: 1°1′0″ -/
-#guard_msgs in #eval fromDeg (⟨1, 1, 0.000000000001⟩ |> toDeg)
+/-- info: 1°1′0.99999999999994315658113919198513031005859375″ -/
+#guard_msgs in #eval fromDeg (⟨1, 1, 1.0⟩ |> toDeg)
