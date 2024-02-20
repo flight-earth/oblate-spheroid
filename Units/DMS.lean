@@ -2,15 +2,21 @@ import Std
 import Std.Lean.Float
 import Std.Data.String.Basic
 import Init.Data
+import Units.Convert
 
 namespace Units.DMS
 
 open String
 open Ordering
 
-structure Deg where
-  deg : Float
-  deriving BEq
+-- SEE: https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/How.20to.20use.20Std.2EHashMap/near/408935525
+open Units.Convert renaming Deg → UDeg, Rad → URad
+open Units.Convert (radToDeg)
+
+structure Deg where deg : UDeg deriving BEq
+structure Rad where rad: URad deriving BEq
+
+def fromRad (r : Rad) : Deg := Deg.mk <| radToDeg r.rad
 
 structure DMS where
   deg : Int
