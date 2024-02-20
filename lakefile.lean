@@ -6,6 +6,8 @@ require std from git
 
 package «oblate-spheroid»
 
+lean_lib Earth
+
 lean_lib Geodesy
 
 lean_lib Units

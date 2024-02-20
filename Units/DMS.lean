@@ -21,7 +21,7 @@ def fromRad (r : Rad) : Deg := Deg.mk <| radToDeg r.rad
 structure DMS where
   deg : Int
   min : Int
-  sec: Float
+  sec : Float
   deriving BEq
 
 def signum (x : Float) : Ordering := if x < 0.0 then lt else if x > 0.0 then gt else eq

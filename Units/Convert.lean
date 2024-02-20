@@ -6,6 +6,7 @@ abbrev Deg : Type := Float
 abbrev Rad : Type := Float
 abbrev Min : Type := Float
 abbrev Sec : Type := Float
+abbrev Meter : Type := Float
 
 def minToSec (m: Min): Sec := m * 60.0
 
