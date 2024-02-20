@@ -1,6 +1,10 @@
 import Geodesy
 import Units
 
+open Geodesy
+open Units.DMS
+open Units.Convert
+
 def main : IO Unit := do
   let london : LatLng := ⟨51.5007, -0.1246⟩
   let newyork : LatLng := ⟨40.6892, -74.0445⟩

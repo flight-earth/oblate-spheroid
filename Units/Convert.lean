@@ -1,6 +1,6 @@
 import Std.Lean.Float
 
-namespace Geodesy.Units.Convert
+namespace Units.Convert
 
 abbrev Deg : Type := Float
 abbrev Rad : Type := Float

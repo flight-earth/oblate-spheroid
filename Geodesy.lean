@@ -1,3 +1,5 @@
+namespace Geodesy
+
 structure LatLng where
   lat : Float
   lng : Float

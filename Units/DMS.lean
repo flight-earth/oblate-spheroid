@@ -2,6 +2,9 @@ import Std
 import Std.Lean.Float
 import Std.Data.String.Basic
 import Init.Data
+
+namespace Units.DMS
+
 open String
 open Ordering
 
