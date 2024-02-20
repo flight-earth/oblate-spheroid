@@ -12,6 +12,9 @@ structure Az where
 structure Dist where
   dist : Float
 
+instance : ToString Dist where
+  toString d := d.dist.toStringFull
+
 structure DirectProblem where
   x : LatLng
   az1 : Az

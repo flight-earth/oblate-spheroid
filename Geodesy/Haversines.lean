@@ -5,7 +5,7 @@ import LatLng
 import Units
 import Geodesy.Problems
 
-namespace Geodesy.Haversine
+namespace Geodesy.Haversines
 
 open Units.Convert
 open Units.Radius
