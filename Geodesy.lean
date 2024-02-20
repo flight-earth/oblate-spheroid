@@ -1,4 +1,4 @@
-namespace Geodesy
+namespace Geodesy.Problems
 
 structure LatLng where
   lat : Float

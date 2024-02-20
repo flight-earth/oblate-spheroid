@@ -1,7 +1,7 @@
 import Geodesy
 import Units
 
-open Geodesy
+open Geodesy.Problems
 open Units.DMS
 open Units.Convert
 
