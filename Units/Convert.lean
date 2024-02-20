@@ -22,3 +22,15 @@ def pi := 3.14159265358979323846264338327950288
 
 def degToRad (x: Deg): Rad := x * pi / 180.0
 def radToDeg (x: Rad) : Deg := x / pi * 180.0
+
+def normalizeDeg (degPlusMinus: Deg): Deg :=
+  let deg := degPlusMinus.abs
+  let n := (deg / 360.0).floor
+  let d := deg - n * 360.0
+
+  if d == 0.0
+    then d
+    else
+      if degPlusMinus > 0.0 then d else 360.0 - d
+
+def normalizeRad : Rad -> Rad := degToRad ∘ normalizeDeg ∘ radToDeg
