@@ -43,7 +43,7 @@ def ordToFloat : Ordering → Float :=
 
 def isEven : UInt64 → Bool := fun x => x % 2 == 0
 
-def plusMinusPi (degPlusMinus : Deg) : Deg :=
+def plusMinusPiDeg (degPlusMinus : Deg) : Deg :=
   if degPlusMinus.isNaN then degPlusMinus else
     let deg := degPlusMinus.abs
     let n := (deg / 180.0).floor
@@ -62,5 +62,9 @@ def plusMinusPi (degPlusMinus : Deg) : Deg :=
               then 0.0
               else if degPlusMinus >= 0.0 then -180.0 else 180.0)
 
-def isPlusMinusHalfPi : Deg → Option Deg :=
-   (fun x => if x < -90.0 || x > 90.0 then none else some x) ∘ plusMinusPi
+def isPlusMinusHalfPiDeg : Deg → Option Deg :=
+   (fun x => if x < -90.0 || x > 90.0 then none else some x) ∘ plusMinusPiDeg
+
+def plusMinusPiRad : Rad → Rad := degToRad ∘ plusMinusPiDeg ∘ radToDeg
+def isPlusMinusHalfPiRad : Rad → Option Rad :=
+  Option.map degToRad ∘ isPlusMinusHalfPiDeg ∘ radToDeg
