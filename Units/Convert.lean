@@ -34,3 +34,33 @@ def normalizeDeg (degPlusMinus: Deg): Deg :=
       if degPlusMinus > 0.0 then d else 360.0 - d
 
 def normalizeRad : Rad -> Rad := degToRad ∘ normalizeDeg ∘ radToDeg
+
+def ordToFloat : Ordering → Float :=
+  fun
+    | Ordering.eq => 0.0
+    | Ordering.lt => -1.0
+    | Ordering.gt => 1.0
+
+def isEven : UInt64 → Bool := fun x => x % 2 == 0
+
+def plusMinusPi (degPlusMinus : Deg) : Deg :=
+  if degPlusMinus.isNaN then degPlusMinus else
+    let deg := degPlusMinus.abs
+    let n := (deg / 180.0).floor
+    let d := deg - n * 180.0
+    let m := ordToFloat $
+      -- There's no Ord instance for Float, so we have to do this manually
+      if degPlusMinus == 0.0
+        then Ordering.eq
+        else if degPlusMinus < 0.0 then Ordering.lt else Ordering.gt
+
+    if d == 0.0
+      then if isEven n.abs.toUInt64 then 0.0 else m * 180.0
+      else
+        (m * d) +
+            (if isEven n.abs.toUInt64
+              then 0.0
+              else if degPlusMinus >= 0.0 then -180.0 else 180.0)
+
+def isPlusMinusHalfPi : Deg → Option Deg :=
+   (fun x => if x < -90.0 || x > 90.0 then none else some x) ∘ plusMinusPi
