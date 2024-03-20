@@ -1,8 +1,15 @@
 import Earth.Ellipsoid
+import Geodesy.Problems
+import LatLng
 import Units.DMS
-open Earth.Ellipsoid
-open Units.DMS
+import Units.Convert
 
+open Earth.Ellipsoid
+open Geodesy.Problems
+open LatLng
+open Units
+open Units.DMS (DMS Rad toRad)
+open Units.Convert renaming Deg → UDeg, Rad → URad
 
 namespace Geodesy.Published.Vincenty1975
 
@@ -33,3 +40,18 @@ def yAzimuths : List DMS :=
     , ⟨  91,  0,  6.11733⟩
     , ⟨ 174, 59, 59.88481⟩
     ]
+
+def inverseProblemData : List ((DMS × DMS) × (DMS × DMS)) :=
+    [ (⟨⟨ 55, 45,  0.00000⟩, ⟨  0,  0,  0.0⟩⟩, ⟨⟨-33, 26,  0.00000⟩, ⟨108, 13,  0.00000⟩⟩)
+    , (⟨⟨ 37, 19, 54.95367⟩, ⟨  0,  0,  0.0⟩⟩, ⟨⟨ 26,  7, 42.83946⟩, ⟨ 41, 28, 35.50729⟩⟩)
+    , (⟨⟨ 35, 16, 11.24862⟩, ⟨  0,  0,  0.0⟩⟩, ⟨⟨ 67, 22, 14.77638⟩, ⟨137, 47, 28.31435⟩⟩)
+    , (⟨⟨  1,  0,  0.00000⟩, ⟨  0,  0,  0.0⟩⟩, ⟨⟨ 0, -59, 53.83076⟩, ⟨179, 17, 48.02997⟩⟩)
+    , (⟨⟨  1,  0,  0.00000⟩, ⟨  0,  0,  0.0⟩⟩, ⟨⟨  1,  1, 15.18952⟩, ⟨179, 46, 17.84244⟩⟩)
+    ]
+
+def toInverseProblem (x y : (DMS × DMS)) : InverseProblem := InverseProblem.mk
+    (let ⟨xLat, xLng⟩ := x; (LatLng.mk (toRad xLat) (toRad xLng)))
+    (let ⟨yLat, yLng⟩ := y; (LatLng.mk (toRad yLat) (toRad yLng)))
+
+def inverseProblems : List InverseProblem :=
+    inverseProblemData |> List.map (fun (x, y) => toInverseProblem x y)

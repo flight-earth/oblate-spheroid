@@ -11,7 +11,7 @@ open Ordering
 
 -- SEE: https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/How.20to.20use.20Std.2EHashMap/near/408935525
 open Units.Convert renaming Deg → UDeg, Rad → URad
-open Units.Convert (radToDeg)
+open Units.Convert (radToDeg degToRad)
 
 structure Deg where deg : UDeg deriving BEq
 structure Rad where rad: URad deriving BEq
@@ -80,6 +80,8 @@ def toDeg (dms : DMS) : Deg :=
   let s := dms'.sec
   let dd := (d * 3600.0 + m * 60.0 + s) / 3600.0
   Deg.mk $ match pn with | eq => 0.0 | gt => dd | lt => -dd
+
+def toRad (dms : DMS) : Rad := toDeg dms |> fun ⟨d⟩ => Rad.mk (degToRad d)
 
 def normalizeDeg (d : Deg) : Deg :=
   let x := mod d.deg.abs 360
