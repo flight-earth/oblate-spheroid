@@ -1,15 +1,17 @@
 import Earth.Ellipsoid
+import Geodesy.Haversines
 import Geodesy.Problems
 import LatLng
-import Units.DMS
 import Units.Convert
+import Units.DMS
 
 open Earth.Ellipsoid
+open Geodesy.Haversines (distance)
 open Geodesy.Problems
 open LatLng
 open Units
-open Units.DMS (DMS Rad toRad)
 open Units.Convert renaming Deg → UDeg, Rad → URad
+open Units.DMS (DMS Rad toRad)
 
 namespace Geodesy.Published.Vincenty1975
 
@@ -55,3 +57,9 @@ def toInverseProblem (x y : (DMS × DMS)) : InverseProblem := InverseProblem.mk
 
 def inverseProblems : List InverseProblem :=
     inverseProblemData |> List.map (fun (x, y) => toInverseProblem x y)
+
+def inverseSolutions : List InverseSolution :=
+    List.zipWith
+        (fun d (x, y) => InverseSolution.mk ⟨d⟩ ⟨(toRad x).rad⟩ (some ⟨(toRad y).rad⟩))
+        distances
+        (List.zip xAzimuths yAzimuths)
