@@ -13,6 +13,12 @@ open Units
 open Units.Convert renaming Deg → UDeg, Rad → URad
 open Units.DMS (DMS Rad toRad)
 
+-- Test data from ...
+--
+-- Direct and Inverse Solutions of Geodesics on the Ellipsoid with Applications
+-- of Nested Equations
+-- Survey Review XXII, 176
+-- T. Vincenty, April 1975.
 namespace Geodesy.Published.Vincenty1975
 
 def ellipsoids : List Ellipsoid :=
@@ -63,3 +69,6 @@ def inverseSolutions : List InverseSolution :=
         (fun d (x, y) => InverseSolution.mk ⟨d⟩ ⟨(toRad x).rad⟩ (some ⟨(toRad y).rad⟩))
         distances
         (List.zip xAzimuths yAzimuths)
+
+def directPairs : List (InverseProblem × InverseSolution) :=
+    List.zip inverseProblems inverseSolutions
