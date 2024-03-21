@@ -11,7 +11,7 @@ open Geodesy.Problems
 open LatLng
 open Units
 open Units.Convert renaming Deg → UDeg, Rad → URad
-open Units.DMS (DMS Rad toRad)
+open Units.DMS (DMS Rad toRad normalizeDMS)
 
 -- Test data from ...
 --
@@ -72,3 +72,63 @@ def inverseSolutions : List InverseSolution :=
 
 def directPairs : List (InverseProblem × InverseSolution) :=
     List.zip inverseProblems inverseSolutions
+
+def directProblems := directPairs |> List.map (fun (p, _) => p)
+def directSolutions := directPairs |> List.map (fun (_, s) => s)
+
+-- Units of mm.
+def tolerance : Float := 0.008
+
+-- From the paper, Vincenty's errors were mm of -0.4, -0.4, -0.7, -0.2 and -0.8.
+def indirectDistanceTolerances : List Float :=
+    [ 0.000404
+    , 0.000387
+    , 0.000703
+    , 0.000197
+    , 0.000787
+    ]
+
+def azTolerance : DMS := ⟨0, 0, 0.016667⟩
+
+-- Units of kilometers for distance and tolerance.
+abbrev Distance := Float
+abbrev TestTolerance := Float
+
+abbrev DiffDMS := DMS → DMS → DMS
+abbrev AzTolerance := DMS
+abbrev SpanLatLng := LatLng → LatLng → Distance
+abbrev AzimuthFwd := LatLng → LatLng → Option Rad
+abbrev AzimuthBwd := LatLng → LatLng → Option Rad
+
+def describeInverseDistance (x y : DMS) (sExpected : Distance) (tolerance : TestTolerance) :=
+    toString x
+    ++ " to "
+    ++ toString y
+    ++ " = "
+    ++ toString sExpected
+    ++ " ± "
+    ++ toString tolerance
+
+def describeAzimuthFwd (x y : DMS) (azActual : Option DMS) (azExpected : DMS) (tolerance : AzTolerance) :=
+    toString x
+    ++ " to "
+    ++ toString y
+    ++ " -> "
+    ++ toString azExpected
+    ++ " ± "
+    ++ toString tolerance
+    ++ " ("
+    ++ (toString $ normalizeDMS <$> azActual)
+    ++ ")"
+
+def describeAzimuthRev (x y : DMS) (azActual : Option DMS) (azExpected : DMS) (tolerance : AzTolerance) :=
+    toString x
+    ++ " to "
+    ++ toString y
+    ++ " <- "
+    ++ toString azExpected
+    ++ " ± "
+    ++ toString tolerance
+    ++ " ("
+    ++ (toString $ normalizeDMS <$> azActual)
+    ++ ")"
