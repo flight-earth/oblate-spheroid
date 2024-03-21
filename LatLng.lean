@@ -7,6 +7,7 @@ open Units.DMS
 structure LatLng where
   lat : Rad
   lng : Rad
+  deriving BEq
 
 instance : ToString LatLng where
   toString x :=

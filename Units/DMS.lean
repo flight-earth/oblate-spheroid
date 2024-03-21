@@ -1,7 +1,9 @@
 import Std
 import Std.Lean.Float
 import Std.Data.String.Basic
+
 import Init.Data
+import Units.Angle
 import Units.Convert
 
 namespace Units.DMS
@@ -9,12 +11,17 @@ namespace Units.DMS
 open String
 open Ordering
 
+open Units.Angle
+
 -- SEE: https://leanprover.zulipchat.com/#narrow/stream/113489-new-members/topic/How.20to.20use.20Std.2EHashMap/near/408935525
 open Units.Convert renaming Deg → UDeg, Rad → URad
-open Units.Convert (radToDeg degToRad)
+open Units.Convert (radToDeg degToRad isEven)
 
 structure Deg where deg : UDeg deriving BEq
 structure Rad where rad: URad deriving BEq
+
+instance : LT Deg where lt x y := x.deg < y.deg
+instance : LT Rad where lt x y := x.rad < y.rad
 
 def fromRad (r : Rad) : Deg := Deg.mk <| radToDeg r.rad
 
@@ -88,6 +95,17 @@ def toDeg (dms : DMS) : Deg :=
   let dd := (d * 3600.0 + m * 60.0 + s) / 3600.0
   Deg.mk $ match pn with | eq => 0.0 | gt => dd | lt => -dd
 
+def ltDMS (x y : DMS) : Prop :=
+  let degX : Deg := toDeg x
+  let degY : Deg := toDeg y
+  degX < degY
+
+instance : LT DMS where
+  lt := ltDMS
+
+instance [LT α] : LT (Option α) where
+  lt := Option.lt (· < ·)
+
 def toRad (dms : DMS) : Rad := toDeg dms |> fun ⟨d⟩ => Rad.mk (degToRad d)
 
 def normalizeDeg (d : Deg) : Deg :=
@@ -106,6 +124,46 @@ instance : ToString Deg where
 
 instance : ToString DMS where
   toString := displayDMS
+
+def diffDMS (x y : DMS) : DMS :=
+  fromDeg ∘ normalizeDeg $ Deg.mk ((toDeg y).deg - (toDeg x).deg)
+
+def absDiffDMS (y x : DMS) : DMS :=
+    let d : DMS := diffDMS y x
+    -- REVIEW: Why is this comparison not decidable?
+    -- `if (toDeg d) > (toDeg (DMS.mk 180 0 0.0))`
+    --   failed to synthesize instance
+    -- Decidable (toDeg d > toDeg { deg := 180, min := 0, sec := 0.0 })
+    -- `if d > (DMS.mk 180 0 0.0))`
+    --   failed to synthesize instance
+    -- Decidable (d > { deg := 180, min := 0, sec := 0.0 })
+    if (toDeg d).deg > (toDeg (DMS.mk 180 0 0.0)).deg
+      then diffDMS (DMS.mk 360 0 0.0) d
+      else d
+
+def dmsPlusMinusPi (dms : DMS) : DMS :=
+    let d := toDeg dms
+    let (a, b) : Int × Float :=  divMod d.deg 180
+
+    fromDeg $ Deg.mk $
+    if b == 0.0
+      then
+        (if isEven a.natAbs.toUInt64 then 0.0 else
+          (if a < 0 then -1.0 else 1.0) * d.deg * 180.0)
+      else (if isEven a.natAbs.toUInt64 then b else (b - 180))
+
+def dmsPlusMinusHalfPi (dms : DMS) : Option DMS :=
+   let ⟨x⟩ := toDeg $ dmsPlusMinusPi dms
+   if x < -90.0 then none else if x > 90.0 then none else some (fromDeg $ Deg.mk x)
+
+instance : Angle DMS where
+  normalize := normalizeDMS
+  plusMinusPi := dmsPlusMinusPi
+  plusMinusHalfPi := dmsPlusMinusHalfPi
+  rotate rotation dms := fromDeg $ Deg.mk ((toDeg dms).deg + (toDeg rotation).deg)
+
+def diffDMS180 (y : DMS) : DMS -> DMS := diffDMS $ Angle.rotate ⟨180, 0, 0⟩ y
+def absDiffDMS180 (y : DMS) : DMS -> DMS := absDiffDMS $ Angle.rotate ⟨180, 0, 0⟩ y
 
 def checkShow (res : String) (tst : Unit -> DMS)  (name := res):=
   let got := toString $ tst ()

@@ -47,3 +47,22 @@ instance : ToString DirectSolution where
 
 instance : ToString InverseSolution where
   toString s := s!"(s={s.s}, az1={s.az1}, az2={s.az2})"
+
+structure GeodeticAccuracy where
+    accuracy : Float
+
+def defaultGeodeticAccuracy := GeodeticAccuracy.mk $ 1 / 1000000000000
+
+inductive AbnormalLatLng where
+| LatUnder
+| LatOver
+| LngUnder
+| LngOver
+
+-- GeodeticInverse needs to be inhabited to be used in a partial recursive definition.
+-- SEE: https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/.E2.9C.94.20partial.20recursive.20def.3A.20failed.20to.20show.20inhabited.20non.20empty/near/291308090
+inductive GeodeticInverse where
+| GeodeticInverseAbnormal : AbnormalLatLng -> GeodeticInverse
+| GeodeticInverseAntipodal : GeodeticInverse
+| GeodeticInverse : InverseSolution -> GeodeticInverse
+deriving Inhabited

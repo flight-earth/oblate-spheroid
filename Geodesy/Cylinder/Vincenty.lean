@@ -1,14 +1,21 @@
 import Std.Lean.Float
+
 import Earth
 import Geodesy.Problems
+import LatLng
 import Units
 
-namespace Geodesy.Vincenty
+namespace Geodesy.Cylinder.Vincenty
 
 open Float
-open Geodesy.Problems
+
 open Earth.Ellipsoid
+open Geodesy.Problems
+open LatLng
+open Units.Angle
 open Units.Convert
+open Units.Convert renaming Deg → UDeg, Rad → URad
+open Units.DMS
 
 structure GeodeticAccuracy where
   geodeticAccuracy: Float

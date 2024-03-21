@@ -6,6 +6,7 @@ import Units
 open LatLng
 open Geodesy.Problems
 open Geodesy.Haversines
+open Geodesy.Published.Vincenty1975
 open Units.DMS
 open Units.Convert
 
@@ -42,3 +43,6 @@ def main : IO Unit := do
   testFromDeg
   testToDeg
   testNormalize
+
+  IO.println s!"Vincenty 1975 Published Data Checks"
+  vincentyUnits
