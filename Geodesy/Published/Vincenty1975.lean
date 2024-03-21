@@ -1,3 +1,5 @@
+import Std
+import Std.Data.String.Basic
 import Earth.Ellipsoid
 import Geodesy.Haversines
 import Geodesy.Problems
@@ -11,7 +13,7 @@ open Geodesy.Problems
 open LatLng
 open Units
 open Units.Convert renaming Deg → UDeg, Rad → URad
-open Units.DMS (DMS Rad toRad normalizeDMS)
+open Units.DMS (DMS Rad toRad fromRad fromDeg normalizeDMS)
 
 -- Test data from ...
 --
@@ -100,7 +102,7 @@ abbrev SpanLatLng := LatLng → LatLng → Distance
 abbrev AzimuthFwd := LatLng → LatLng → Option Rad
 abbrev AzimuthBwd := LatLng → LatLng → Option Rad
 
-def describeInverseDistance (x y : DMS) (sExpected : Distance) (tolerance : TestTolerance) :=
+def describeInverseDistance (x y : LatLng) (sExpected : Distance) (tolerance : TestTolerance) :=
     toString x
     ++ " to "
     ++ toString y
@@ -109,26 +111,98 @@ def describeInverseDistance (x y : DMS) (sExpected : Distance) (tolerance : Test
     ++ " ± "
     ++ toString tolerance
 
-def describeAzimuthFwd (x y : DMS) (azActual : Option DMS) (azExpected : DMS) (tolerance : AzTolerance) :=
+def describeAzimuthFwd (x y : LatLng) (azActual : Option Rad) (azExpected : Az) (tolerance : AzTolerance) :=
     toString x
     ++ " to "
     ++ toString y
     ++ " -> "
-    ++ toString azExpected
+    ++ toString (fromDeg $ fromRad ⟨azExpected.az⟩)
     ++ " ± "
     ++ toString tolerance
     ++ " ("
-    ++ (toString $ normalizeDMS <$> azActual)
+    ++ (toString $ (normalizeDMS ∘ fromDeg ∘ fromRad) <$> azActual)
     ++ ")"
 
-def describeAzimuthRev (x y : DMS) (azActual : Option DMS) (azExpected : DMS) (tolerance : AzTolerance) :=
+def describeAzimuthRev (x y : LatLng) (azActual azExpected : Option Rad) (tolerance : AzTolerance) :=
     toString x
     ++ " to "
     ++ toString y
     ++ " <- "
-    ++ toString azExpected
+    ++ (toString $ (normalizeDMS ∘ fromDeg ∘ fromRad) <$> azExpected)
     ++ " ± "
     ++ toString tolerance
     ++ " ("
-    ++ (toString $ normalizeDMS <$> azActual)
+    ++ (toString $ (normalizeDMS ∘ fromDeg ∘ fromRad) <$> azActual)
     ++ ")"
+
+-- Vincenty's distance inverse checks, from Vincenty 1975 (Rainsford 1955)
+-- def distanceTests
+
+--     indirectDistanceTolerances
+--     azTolerance
+--     ellipsoids
+--     inverseSolutions
+--     inverseProblems
+
+abbrev Assertion := IO Unit
+
+def assertFailure (msg : String) : IO Unit := IO.println msg
+def unlessb (b : Bool) (m : IO Unit) : IO Unit := if b then pure () else m
+
+def assertCompare [ToString a] (preface : String) (compare : a → a → Bool) (cmpSymbol : String) (key : a) (actual : a) : Assertion :=
+    unlessb
+        (compare actual key)
+        (let msg := (if "" == preface then "" else preface ++ "\n") ++ "expected: " ++ toString actual ++ cmpSymbol ++ toString key
+        assertFailure msg)
+
+infixr:50 " @?<= " => assertCompare "" (· <= ·) " <= "
+
+def testCase (name : String) (test : Assertion) : Assertion :=
+    IO.println name *> test
+
+def diff (x y : Float) : Float := Float.abs (x - y)
+def azToDms (az : Az) : DMS := fromDeg $ fromRad ⟨az.az⟩
+def radToDms : Rad → DMS := fromDeg ∘ fromRad
+
+def inverseChecks
+    (diffAzFwd : DiffDMS)
+    (diffAzRev : DiffDMS)
+    (distTolerances : List TestTolerance)
+    (azTolerance : AzTolerance)
+    (spans : List SpanLatLng)
+    (azFwds : List AzimuthFwd)
+    (azRevs : List AzimuthBwd)
+    (solns : List InverseSolution)
+    (probs : List InverseProblem) := do
+        let f := (fun
+            (distTolerance : TestTolerance)
+            (span : SpanLatLng)
+            (azFwd : AzimuthFwd)
+            (azRev : AzimuthBwd)
+            (soln : InverseSolution)
+            (prob : InverseProblem) =>
+                let ⟨⟨s⟩ , α₁, α₂⟩ := soln
+                let ⟨x, y⟩ := prob
+                let s' := span x y
+                let α₁' := azFwd x y
+                let α₂' := azRev x y
+                testCase (describeInverseDistance x y s tolerance)
+                    $ diff s' s
+                    @?<= distTolerance
+
+                -- testCase (describeAzimuthFwd x y α₁' α₁ azTolerance)
+                --     $ ((flip diffAzFwd) (azToDms α₁) <$> (radToDms <$> α₁'))
+                --     @?<= some azTolerance
+
+                -- , testCase (describeAzimuthRev x y α₂' α₂ azTolerance)
+                --     $ diffAzRev <$> α₂' <*> α₂
+                --     @?<= some azTolerance
+                )
+
+
+        List.zipWith
+            (fun (t, span) ((azFwd, azRev), (soln, prob)) => f t span azFwd azRev soln prob)
+            (List.zip distTolerances spans)
+            (List.zip
+                (List.zip azFwds azRevs)
+                (List.zip solns probs))
