@@ -13,7 +13,7 @@ open Geodesy.Problems
 open LatLng
 open Units
 open Units.Convert renaming Deg → UDeg, Rad → URad
-open Units.DMS (DMS Rad toRad fromRad fromDeg normalizeDMS)
+open Units.DMS (DMS Rad toRad fromRad fromDeg normalizeDMS absDiffDMS)
 
 -- Test data from ...
 --
@@ -206,3 +206,21 @@ def inverseChecks
             (List.zip
                 (List.zip azFwds azRevs)
                 (List.zip solns probs))
+
+def vincentyUnits : IO Unit := do
+    let diffAzFwd : DiffDMS := absDiffDMS
+    let diffAzRev : DiffDMS := (fun x y => diffDMS x y)
+    let spanLatLng : SpanLatLng := (fun x y => distance x y bessel)
+    let checks := inverseChecks
+        diffAzFwd
+        diffAzRev
+        indirectDistanceTolerances
+        azTolerance
+        (List.replicate 5 spanLatLng)
+        (List.replicate 5 (fun _ _ => none))
+        (List.replicate 5 (fun _ _ => none))
+        inverseSolutions
+        inverseProblems
+
+    for check in checks do
+        check
