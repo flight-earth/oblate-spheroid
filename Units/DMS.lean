@@ -147,9 +147,8 @@ instance : Angle DMS where
   plusMinusHalfPi := dmsPlusMinusHalfPi
   rotate rotation dms := fromDeg $ Deg.mk ((toDeg dms).deg + (toDeg rotation).deg)
 
-def diffDMS180 [Angle DMS] (y : DMS) : DMS := diffDMS (rotate (DMS (180, 0, 0)).rotate y)
-
-def absDiffDMS180 y := absDiffDMS (rotate (DMS (180, 0, 0)) y)
+def diffDMS180 (y : DMS) : DMS -> DMS := diffDMS $ Angle.rotate ⟨180, 0, 0⟩ y
+def absDiffDMS180 (y : DMS) : DMS -> DMS := absDiffDMS $ Angle.rotate ⟨180, 0, 0⟩ y
 
 def checkShow (res : String) (tst : Unit -> DMS)  (name := res):=
   let got := toString $ tst ()
