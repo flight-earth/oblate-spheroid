@@ -51,15 +51,22 @@ def signDMS : DMS -> Ordering × DMS
 #guard signDMS (DMS.mk 0 1 0) == (gt, ⟨0, 1, 0.0⟩)
 #guard signDMS (DMS.mk 1 0 0) == (gt, ⟨1, 0, 0.0⟩)
 
-def div (n : Float) (d : Int) : Int :=
+def div' (n : Float) (d : Float) : Float :=
   let n' := Float.abs n
+  let d' := Float.abs d
+  (n' / d').floor
+  |> fun x => if signum n == signum d' then x else -x
+
+def div (n : Float) (d : Int) : Int :=
   let d' := Float.ofInt d
-  let d'' := Float.abs d'
-  (n' / d'').floor.toUInt64.toNat
-  |> fun x => if signum n == signum d'' then x else -x
+  (div' n d').abs.toUInt64.toNat
+  |> fun x => if signum n == signum d' then x else -x
 
 def mod (n : Float) (d : Int) : Float :=
   n - Float.ofInt (div n d * d)
+
+def mod' (n : Float) (d : Float) : Float :=
+  n - (div' n d * d)
 
 def divMod (n : Float) (d : Int) : (Int × Float) :=
   let q := div n d
