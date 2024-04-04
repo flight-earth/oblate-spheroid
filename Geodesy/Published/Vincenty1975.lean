@@ -241,6 +241,7 @@ def vincentyUnits : IO Unit := do
         | Except.error _ => ⟨0⟩
         | Except.ok d => d)
 
+    -- TODO: Add directChecks to checks
     let checks := inverseChecks
         diffAzFwd
         diffAzRev
