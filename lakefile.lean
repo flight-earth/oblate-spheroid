@@ -1,8 +1,8 @@
 import Lake
 open Lake DSL
 
-require std from git
-  "git@github.com:leanprover/std4/" @ "v4.6.0-rc1"
+require batteries from git
+  "git@github.com:leanprover-community/batteries" @ "v4.35.0"
 
 package «oblate-spheroid»
 

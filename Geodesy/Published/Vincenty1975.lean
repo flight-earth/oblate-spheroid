@@ -1,5 +1,5 @@
-import Std
-import Std.Data.String.Basic
+import Batteries
+import Batteries.Data.String.Basic
 import Earth.Ellipsoid
 import Geodesy.Haversines
 import Geodesy.Problems
@@ -224,7 +224,7 @@ def inverseChecks
                         $ actual @?<=Deg expected
                 ]
 
-        List.join $
+        List.flatten $
         List.zipWith
             (fun (t, span) ((azFwd, azRev), (soln, prob)) => f t span azFwd azRev soln prob)
             (List.zip distTolerances spans)

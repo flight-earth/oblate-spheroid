@@ -1,4 +1,4 @@
-import Std.Lean.Float
+import Batteries.Data.Float.Basic
 
 import Earth
 import Geodesy.Problems

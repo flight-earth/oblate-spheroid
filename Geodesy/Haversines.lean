@@ -1,5 +1,5 @@
-import Std
-import Std.Lean.Float
+import Batteries
+import Batteries.Data.Float.Basic
 import Earth
 import LatLng
 import Units

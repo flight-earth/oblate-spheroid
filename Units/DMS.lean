@@ -1,6 +1,6 @@
-import Std
-import Std.Lean.Float
-import Std.Data.String.Basic
+import Batteries
+import Batteries.Data.Float.Basic
+import Batteries.Data.String.Basic
 
 import Init.Data
 import Units.Angle
